@@ -6,7 +6,7 @@ close all
 % and we apply it onto someone`s voice
 
 % Impulse response length (To be adjusted)
-m = 4095;
+m = 4001;
 
 % White noice injected into the room
 [pureWN, Fs] = audioread('res/bruit_emis_32kHz.wav');
@@ -19,6 +19,8 @@ m = 4095;
 % Solving for h
 h = identify(pureWN, taintedWN, m);
 
+prediction = filter(h, 1, pureWN);
+E = evalErrorPower(taintedWN(m:end), prediction(m:end))
 
 % Applying the filter coefficients to a human voice
 [hum, ~] = audioread('res/parole_emise_32khz.wav');
