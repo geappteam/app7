@@ -15,18 +15,9 @@ m = 4095;
 [taintedWN, ~] = audioread('res/bruit_capte_32kHz.wav');
 
 
-% Autocorrelation of original signal
-Rxx = xcorr(pureWN, pureWN, m);
-
-% Toepliz Matrix
-A = toeplitz(Rxx(m+1:2*m+1));
-
-% result table
-Rxy = xcorr(pureWN, taintedWN, m);
-b = Rxy(1:m+1);
 
 % Solving for h
-h = linsolve(A, b);
+h = identify(pureWN, taintedWN, m);
 
 
 % Applying the filter coefficients to a human voice
