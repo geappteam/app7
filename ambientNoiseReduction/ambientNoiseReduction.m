@@ -43,7 +43,7 @@ end
 yVoice = filter(b*K,a,yVoice);
 
 % 3 - Decimating (L)
-yVoice = decimate(yVoice,L);
+yVoice = decimateAlgorithm(yVoice,L);
 
 %Verifying that the sample is ok
 audiowrite('parole_propre_16kHz.wav',yVoice,FsNoise);
@@ -62,42 +62,51 @@ end
 
 %% Conceiving FIR filters with the inverse FTDS 
 %First version (highpass and lowpass)
-Ham = hamming(length(yMixed));
-Han = hann(length(yMixed));
+Order = 100;
+nbPoints = Order+1;
 
-N = -((length(yMixed)-1)/2):((length(yMixed)-1)/2);
+Ham = hamming(nbPoints);
+Han = hann(nbPoints);
+
+N = -((nbPoints-1)/2):((nbPoints-1)/2);
 %Lowpass
 ThetaCLow = voiceFreqBand(2)*2*pi/FsNoise;
 HLow = (ThetaCLow/pi)*sinc(ThetaCLow*N/pi);
 HLowHam = HLow.*Ham';
 HLowHan = HLow.*Han';
 
-% figure()
-% freqz(HLowHan)
-% hold on
-% freqz(conv(HLowHan,HLowHan))
-% hold off
+figure()
+freqz(HLowHan)
+hold on
+plot(voiceFreqBand(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+hold off
 
 %Highpass
 ThetaCHigh = voiceFreqBand(1)*2*pi/FsNoise;
-HHigh = (sin(pi.*N)-sin(ThetaCHigh.*N))./(pi*N);
+HHigh = -sin(ThetaCHigh*N)./(pi*N);
+HHigh(Order/2+1) = 1/(2*pi)*(((-ThetaCHigh)-(-pi))+(pi - ThetaCHigh));
+
 HHighHam = HHigh.*Ham';
 HHighHan = HHigh.*Han';
 
-% figure()
-% freqz(HHighHan)
-% hold on
-% freqz(conv(HHighHan,HHighHan))
-% hold off
+figure()
+freqz(HHighHan)
+hold on
+plot(voiceFreqBand(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+hold off
 
 %Resulting frequency response of the bandpass filter
 V1_FIR = conv(HLowHan,HHighHan);
 figure()
 freqz(V1_FIR)
+hold on
+plot(voiceFreqBand(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+plot(voiceFreqBand(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+hold off
 
 %Second version (bandpass)
 %Filter to compare with 
-fir1_filter = fir1(1,voiceFreqBand/(FsNoise/2),'bandpass');
+fir1_filter = fir1(Order,voiceFreqBand/(FsNoise/2),'bandpass');
 
 %Filter made by equations of transformation
 Theta0 = ThetaCHigh+(ThetaCLow-ThetaCHigh)/2;
@@ -107,6 +116,8 @@ figure()
 freqz(fir1_filter)
 hold on
 freqz(V2_FIR)
+plot(voiceFreqBand(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+plot(voiceFreqBand(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
 hold off
 
 %% Conceiving IIR filters
@@ -118,20 +129,72 @@ MaxGaindB = 0.5;
 MaxGaindB_below150Hz_beyond5000Hz = 40;
 
 %Constants
-N = 1;
-Rp = MaxGaindB;
+N = 5;
+Rp = MaxGaindB*0.9;
 Rs = MaxGaindB_below150Hz_beyond5000Hz;
 Fs = [150 5000];
+MaxGaindB2Linear = 10^(MaxGaindB/20);
 
 [B_BUTTER,A_BUTTER] = butter(N,voiceFreqBand/(FsNoise/2),'bandpass');
 [B_CHEBY1,A_CHEBY1] = cheby1(N,Rp,voiceFreqBand/(FsNoise/2),'bandpass');
-[B_CHEBY2,A_CHEBY2] = cheby2(N,Rs,Fs/(FsNoise/2),'bandpass');
-[B_ELLIP,A_ELLIP] = ellip(N,Rp,Rs,voiceFreqBand/(FsNoise/2),'bandpass');
+[B_CHEBY2,A_CHEBY2] = cheby2(N,Rs,Fs/(FsNoise/2),'bandpass'); %Ordre 7
+[B_ELLIP,A_ELLIP] = ellip(N,Rp,Rs,voiceFreqBand/(FsNoise/2),'bandpass'); %Ordre 5
+
+A_BUTTER = A_BUTTER*MaxGaindB2Linear;
+A_CHEBY1 = A_CHEBY1*MaxGaindB2Linear;
+A_CHEBY2 = A_CHEBY2*MaxGaindB2Linear;
+A_ELLIP = A_ELLIP*MaxGaindB2Linear;
 
 figure()
-freqz([B_BUTTER,A_BUTTER])
+freqz(B_BUTTER,A_BUTTER)
 hold on
-freqz([B_CHEBY1,A_CHEBY1])
-freqz([B_CHEBY2,A_CHEBY2])
-freqz([B_ELLIP,A_ELLIP])
+freqz(B_CHEBY1,A_CHEBY1)
+freqz(B_CHEBY2,A_CHEBY2)
+freqz(B_ELLIP,A_ELLIP)
 legend('BUTTER','CHEBY1','CHEBY2','ELLIP')
+lines = findall(gcf,'type','line');
+set(lines(1),'color','red')
+set(lines(2),'color','blue')
+set(lines(3),'color','magenta')
+set(lines(4),'color','green')
+
+plot(Fs(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+plot(Fs(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+plot(voiceFreqBand(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+plot(voiceFreqBand(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+plot(0:1, MinGaindB*ones(length(0:1),1),'k')
+plot(0:1, MaxGaindB*ones(length(0:1),1),'k')
+
+hold off
+%% Real specs obtained for each IIR filters
+display(tf(B_BUTTER,A_BUTTER))
+display(tf(B_CHEBY1,A_CHEBY1))
+display(tf(B_CHEBY2,A_CHEBY2))
+display(tf(B_ELLIP,A_ELLIP))
+
+%ANSWER: Filtre elliptique odre 5 à utiliser!
+
+%% Ambient noise reduction demonstration
+
+for i = 1:length(RSB)  
+    %FIR
+    yMixedFiltered = conv(V1_FIR,yMixed(:,i));
+    audiowrite(strcat('mixedFiltered_FIR_V1_16kHz_',num2str(RSB(i)),'dB_RSB.wav'),yMixedFiltered,FsNoise);
+    yMixedFiltered = conv(V2_FIR,yMixed(:,i));
+    audiowrite(strcat('mixedFiltered_FIR_V2_16kHz_',num2str(RSB(i)),'dB_RSB.wav'),yMixedFiltered,FsNoise);
+    %IIR
+    yMixedFiltered = filter(B_ELLIP,A_ELLIP,yMixed);
+    audiowrite(strcat('mixedFiltered_IIR_16kHz_',num2str(RSB(i)),'dB_RSB.wav'),yMixedFiltered,FsNoise);
+end
+%% Comparison of the FIR filters
+figure()
+freqz(V1_FIR)
+hold on
+freqz(V2_FIR)
+freqz(B_ELLIP,A_ELLIP)
+hold off
+legend('FIR V1','FIR V2','IIR')
+lines = findall(gcf,'type','line');
+set(lines(1),'color','red')
+set(lines(2),'color','blue')
+set(lines(3),'color','green')
