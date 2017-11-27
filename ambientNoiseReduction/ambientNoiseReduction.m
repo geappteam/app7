@@ -61,5 +61,77 @@ end
 
 
 %% Conceiving FIR filters with the inverse FTDS 
+%First version (highpass and lowpass)
+Ham = hamming(length(yMixed));
+Han = hann(length(yMixed));
 
+N = -((length(yMixed)-1)/2):((length(yMixed)-1)/2);
+%Lowpass
+ThetaCLow = voiceFreqBand(2)*2*pi/FsNoise;
+HLow = (ThetaCLow/pi)*sinc(ThetaCLow*N/pi);
+HLowHam = HLow.*Ham';
+HLowHan = HLow.*Han';
 
+% figure()
+% freqz(HLowHan)
+% hold on
+% freqz(conv(HLowHan,HLowHan))
+% hold off
+
+%Highpass
+ThetaCHigh = voiceFreqBand(1)*2*pi/FsNoise;
+HHigh = (sin(pi.*N)-sin(ThetaCHigh.*N))./(pi*N);
+HHighHam = HHigh.*Ham';
+HHighHan = HHigh.*Han';
+
+% figure()
+% freqz(HHighHan)
+% hold on
+% freqz(conv(HHighHan,HHighHan))
+% hold off
+
+%Resulting frequency response of the bandpass filter
+V1_FIR = conv(HLowHan,HHighHan);
+figure()
+freqz(V1_FIR)
+
+%Second version (bandpass)
+%Filter to compare with 
+fir1_filter = fir1(1,voiceFreqBand/(FsNoise/2),'bandpass');
+
+%Filter made by equations of transformation
+Theta0 = ThetaCHigh+(ThetaCLow-ThetaCHigh)/2;
+V2_FIR = 2*HLowHan.*cos(Theta0.*N);
+
+figure()
+freqz(fir1_filter)
+hold on
+freqz(V2_FIR)
+hold off
+
+%% Conceiving IIR filters
+%Tolerances/Specs
+GaindB = 0;
+MinGaindB = -0.5;
+MaxGaindB = 0.5;
+
+MaxGaindB_below150Hz_beyond5000Hz = 40;
+
+%Constants
+N = 1;
+Rp = MaxGaindB;
+Rs = MaxGaindB_below150Hz_beyond5000Hz;
+Fs = [150 5000];
+
+[B_BUTTER,A_BUTTER] = butter(N,voiceFreqBand/(FsNoise/2),'bandpass');
+[B_CHEBY1,A_CHEBY1] = cheby1(N,Rp,voiceFreqBand/(FsNoise/2),'bandpass');
+[B_CHEBY2,A_CHEBY2] = cheby2(N,Rs,Fs/(FsNoise/2),'bandpass');
+[B_ELLIP,A_ELLIP] = ellip(N,Rp,Rs,voiceFreqBand/(FsNoise/2),'bandpass');
+
+figure()
+freqz([B_BUTTER,A_BUTTER])
+hold on
+freqz([B_CHEBY1,A_CHEBY1])
+freqz([B_CHEBY2,A_CHEBY2])
+freqz([B_ELLIP,A_ELLIP])
+legend('BUTTER','CHEBY1','CHEBY2','ELLIP')
