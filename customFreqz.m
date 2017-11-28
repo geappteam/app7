@@ -11,7 +11,8 @@ function [ output_args ] = customFreqz( b, a, minW, maxW)
     
     incW = (maxW - minW) / (nbPoints);
     
-    teta = (minW:incW:maxW)*pi;
+    W = (minW:incW:maxW-incW);
+    teta = W*pi;
     
     z = exp(-1j*teta);
     
@@ -19,11 +20,14 @@ function [ output_args ] = customFreqz( b, a, minW, maxW)
     
     figure()
     subplot(2,1,1)
-    plot(teta, mag2db(abs(rFreq)))
+    plot(W, mag2db(abs(rFreq)))
     title('Reponse en frequence (freqz maison)')
+    xlabel('Normalized Frequency (* \pi rad/sample)')
+    ylabel('Magnitude (dB)')
     subplot(2,1,2)
-    plot(teta, angle(rFreq))
-    
+    plot(W, -rad2deg(angle(rFreq)))
+    xlabel('Normalized Frequency (* \pi rad/sample)')
+    ylabel('Phase (degrees)')
     output_args = rFreq;
 end
 
