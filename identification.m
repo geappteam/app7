@@ -1,7 +1,3 @@
-clc
-clear all
-close all
-
 % In this script, we identify the effect of a room on a sound signal
 % and we apply it onto someone`s voice
 
@@ -47,7 +43,6 @@ while (mStep >= 1)
     
     if (mStep == 1)
         if (E > maxE)
-            %m = m + 1;
             continue;
         end
         
