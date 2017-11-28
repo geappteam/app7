@@ -1,14 +1,10 @@
-clear all
-close all
-clc
-
 %% Constants and useful variables
 voiceFreqBand = [300 4000];
 [yNoise,FsNoise] = audioread('bruit_ambiant_16kHz.wav');
 [yVoice,FsVoice] = audioread('parole_propre_12kHz.wav');
 
 % Order of the low-pass filter
-N = 20;
+N = 2;
 % Ripple in dB
 Rp = 3;
 
@@ -43,9 +39,11 @@ end
 yVoice = filter(b*K,a,yVoice);
 
 % 3 - Decimating (L)
-yVoice = decimate(yVoice,L);
-%yVoiceBUFFER = yVoice(1:L:end);
-% yVoice = yVoiceBUFFER;
+%yVoice = decimate(yVoice,L);
+[b_dec,a_dec] = cheby1(N/2,0.05,0.8/L);
+yVoice = filter(b_dec,a_dec,yVoice);
+yVoiceBUFFER = yVoice(1:L:end);
+yVoice = yVoiceBUFFER;
 
 %Verifying that the sample is ok
 audiowrite('parole_propre_16kHz.wav',yVoice,FsNoise);
@@ -63,7 +61,6 @@ end
 
 
 %% Conceiving FIR filters with the inverse FTDS 
-close all
 %First version (highpass and lowpass)
 Order = 200; %Order 40 for first spec (with enough attenuation in stopband) , Order 100 , Order 200 , Order 300
 nbPoints = Order+1;
@@ -164,10 +161,10 @@ MaxGaindB2Linear = 10^(MaxGaindB/20);
 [B_CHEBY2,A_CHEBY2] = cheby2(N,Rs,Fs/(FsNoise/2),'bandpass'); %Ordre 7
 [B_ELLIP,A_ELLIP] = ellip(N,Rp,Rs,voiceFreqBand/(FsNoise/2),'bandpass'); %Ordre 5
 
-A_BUTTER = A_BUTTER*MaxGaindB2Linear;
-A_CHEBY1 = A_CHEBY1*MaxGaindB2Linear;
-A_CHEBY2 = A_CHEBY2*MaxGaindB2Linear;
-A_ELLIP = A_ELLIP*MaxGaindB2Linear;
+B_BUTTER = B_BUTTER*MaxGaindB2Linear;
+B_CHEBY1 = B_CHEBY1*MaxGaindB2Linear;
+B_CHEBY2 = B_CHEBY2*MaxGaindB2Linear;
+B_ELLIP = B_ELLIP*MaxGaindB2Linear;
 
 figure()
 freqz(B_BUTTER,A_BUTTER)
