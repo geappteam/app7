@@ -15,8 +15,6 @@ maxE = 0.5;
 [taintedWN, ~] = audioread('res/bruit_capte_32kHz.wav');
 [taintedVoice, ~] = audioread('res/parole_captee_32khz.wav');
 
-
-
 Rxx = xcorr(pureWN, pureWN, maxM);
 Rxy = xcorr(pureWN, taintedWN, maxM);
 
@@ -57,7 +55,7 @@ m
 N = m+1
 E
 figure()
-freqz(h,1)
+customFreqz(h,1)
 title('Reponse en frequence de la salle');
 figure()
 impz(h,1)
