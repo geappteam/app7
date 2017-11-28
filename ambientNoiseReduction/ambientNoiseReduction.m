@@ -8,7 +8,7 @@ voiceFreqBand = [300 4000];
 [yVoice,FsVoice] = audioread('parole_propre_12kHz.wav');
 
 % Order of the low-pass filter
-N = 2;
+N = 20;
 % Ripple in dB
 Rp = 3;
 
@@ -43,10 +43,12 @@ end
 yVoice = filter(b*K,a,yVoice);
 
 % 3 - Decimating (L)
-yVoice = decimateAlgorithm(yVoice,L);
+yVoice = decimate(yVoice,L);
+%yVoiceBUFFER = yVoice(1:L:end);
+% yVoice = yVoiceBUFFER;
 
 %Verifying that the sample is ok
-audiowrite('parole_propre_16kHz.wav',yVoice,FsNoise);
+audiowrite('parole_propre_16kHz.wav',yVoiceBUFFER,FsNoise);
 
 %% Mixing the noise and the voice
 gainRBS = zeros(length(RSB),1);
@@ -61,8 +63,9 @@ end
 
 
 %% Conceiving FIR filters with the inverse FTDS 
+close all
 %First version (highpass and lowpass)
-Order = 100;
+Order = 200; %Order 40 for first spec (with enough attenuation in stopband) , Order 100 , Order 200 , Order 300
 nbPoints = Order+1;
 
 Ham = hamming(nbPoints);
@@ -80,6 +83,7 @@ freqz(HLowHan)
 hold on
 plot(voiceFreqBand(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
 hold off
+title('FIR Lowpass filter frequency response')
 
 %Highpass
 ThetaCHigh = voiceFreqBand(1)*2*pi/FsNoise;
@@ -93,7 +97,9 @@ figure()
 freqz(HHighHan)
 hold on
 plot(voiceFreqBand(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+title('FIR Highpass filter frequency response')
 hold off
+
 
 %Resulting frequency response of the bandpass filter
 V1_FIR = conv(HLowHan,HHighHan);
@@ -103,6 +109,7 @@ hold on
 plot(voiceFreqBand(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
 plot(voiceFreqBand(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
 hold off
+title('FIR Bandpass filter (made of highpass and lowpass) frequency response ')
 
 %Second version (bandpass)
 %Filter to compare with 
@@ -110,14 +117,31 @@ fir1_filter = fir1(Order,voiceFreqBand/(FsNoise/2),'bandpass');
 
 %Filter made by equations of transformation
 Theta0 = ThetaCHigh+(ThetaCLow-ThetaCHigh)/2;
-V2_FIR = 2*HLowHan.*cos(Theta0.*N);
+BW = 1850;
+Theta1 = 2*pi*BW/FsNoise;
+HL = (Theta1/pi)*sinc(Theta1*N/pi);
+V2_FIR = 2*HL.*cos(Theta0.*N);
 
+figure()
+freqz(V2_FIR)
+hold on
+plot(voiceFreqBand(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+plot(voiceFreqBand(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+hold off
+title('FIR Bandpass filter (by equations of transformation) frequency response')
+
+%Comparison FIR filters V1 and V2
 figure()
 freqz(fir1_filter)
 hold on
 freqz(V2_FIR)
+lines = findall(gcf,'type','line');
+set(lines(1),'color','red')
+set(lines(2),'color','blue')
 plot(voiceFreqBand(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
 plot(voiceFreqBand(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+title('FIR Bandpass filter (by equations of transformation) frequency response compared to fir1() Matlab function')
+legend('fir()','FIR V2')
 hold off
 
 %% Conceiving IIR filters
@@ -157,6 +181,7 @@ set(lines(1),'color','red')
 set(lines(2),'color','blue')
 set(lines(3),'color','magenta')
 set(lines(4),'color','green')
+title('IIR Bandpass filters frequency response')
 
 plot(Fs(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
 plot(Fs(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
@@ -164,6 +189,7 @@ plot(voiceFreqBand(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
 plot(voiceFreqBand(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
 plot(0:1, MinGaindB*ones(length(0:1),1),'k')
 plot(0:1, MaxGaindB*ones(length(0:1),1),'k')
+plot(0:1, -MaxGaindB_below150Hz_beyond5000Hz*ones(length(0:1),1),'k')
 
 hold off
 %% Real specs obtained for each IIR filters
@@ -192,9 +218,18 @@ freqz(V1_FIR)
 hold on
 freqz(V2_FIR)
 freqz(B_ELLIP,A_ELLIP)
-hold off
 legend('FIR V1','FIR V2','IIR')
 lines = findall(gcf,'type','line');
 set(lines(1),'color','red')
 set(lines(2),'color','blue')
 set(lines(3),'color','green')
+plot(Fs(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+plot(Fs(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+plot(voiceFreqBand(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+plot(voiceFreqBand(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
+plot(0:1, MinGaindB*ones(length(0:1),1),'k')
+plot(0:1, MaxGaindB*ones(length(0:1),1),'k')
+plot(0:1, -MaxGaindB_below150Hz_beyond5000Hz*ones(length(0:1),1),'k')
+hold off
+
+title('Chosen FIR (version 1 and 2) and IIR Bandpass filters frequency response comparison')
