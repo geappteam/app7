@@ -56,6 +56,12 @@ end
 m
 N = m+1
 E
+figure()
+freqz(h,1)
+title('Reponse en frequence de la salle');
+figure()
+impz(h,1)
+title('Reponse impulsionnelle de la salle');
 
 % Playing the filtered voice sample
 out = filter(h, 1, pureVoice);
