@@ -100,8 +100,8 @@ hold off
 
 %Resulting frequency response of the bandpass filter
 V1_FIR = conv(HLowHan,HHighHan);
-figure()
-freqz(V1_FIR)
+figure(100)
+customFreqz(V1_FIR,1)
 hold on
 plot(voiceFreqBand(1)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
 plot(voiceFreqBand(2)/(FsNoise/2)*ones(513,1), -(512/2):(512/2),'k')
@@ -128,10 +128,10 @@ hold off
 title('FIR Bandpass filter (by equations of transformation) frequency response')
 
 %Comparison FIR filters V1 and V2
-figure()
-freqz(fir1_filter)
+figure(200)
+customFreqz(fir1_filter,1)
 hold on
-freqz(V2_FIR)
+customFreqz(V2_FIR,1)
 lines = findall(gcf,'type','line');
 set(lines(1),'color','red')
 set(lines(2),'color','blue')
@@ -166,12 +166,12 @@ B_CHEBY1 = B_CHEBY1*MaxGaindB2Linear;
 B_CHEBY2 = B_CHEBY2*MaxGaindB2Linear;
 B_ELLIP = B_ELLIP*MaxGaindB2Linear;
 
-figure()
-freqz(B_BUTTER,A_BUTTER)
+figure(300)
+customFreqz(B_BUTTER,A_BUTTER)
 hold on
-freqz(B_CHEBY1,A_CHEBY1)
-freqz(B_CHEBY2,A_CHEBY2)
-freqz(B_ELLIP,A_ELLIP)
+customFreqz(B_CHEBY1,A_CHEBY1)
+customFreqz(B_CHEBY2,A_CHEBY2)
+customFreqz(B_ELLIP,A_ELLIP)
 legend('BUTTER','CHEBY1','CHEBY2','ELLIP')
 lines = findall(gcf,'type','line');
 set(lines(1),'color','red')
