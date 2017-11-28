@@ -1,7 +1,3 @@
-clc
-clear all
-close all
-
 fc = 2000;
 Fs = 16000;
 wc = fc*2*pi;
@@ -9,6 +5,7 @@ wc = fc*2*pi;
 % Filter to transfer to z domain
 cDen = [1/wc^2, sqrt(2)/wc, 1];
 fonctionEnS = tf(1,  cDen)
+figure()
 bode(fonctionEnS)
 title('Analog filter')
 
