@@ -48,7 +48,7 @@ yVoice = decimate(yVoice,L);
 % yVoice = yVoiceBUFFER;
 
 %Verifying that the sample is ok
-audiowrite('parole_propre_16kHz.wav',yVoiceBUFFER,FsNoise);
+audiowrite('parole_propre_16kHz.wav',yVoice,FsNoise);
 
 %% Mixing the noise and the voice
 gainRBS = zeros(length(RSB),1);
