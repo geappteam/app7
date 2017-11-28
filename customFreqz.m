@@ -18,7 +18,6 @@ function [ output_args ] = customFreqz( b, a, minW, maxW)
     
     rFreq = polyval(b,z)./polyval(a,z);
     
-    figure()
     subplot(2,1,1)
     plot(W, mag2db(abs(rFreq)))
     title('Reponse en frequence (freqz maison)')
