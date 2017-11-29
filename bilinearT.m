@@ -13,7 +13,7 @@ title('Analog filter')
 Wn = fc / (Fs /2);
 [expect_b, expect_a] = butter(2, Wn)
 figure()
-freqz(expect_b,expect_a)
+soziFreqz(expect_b,expect_a);
 title('Expected filter from butter()');
 
 %% Biliear transform
@@ -25,5 +25,5 @@ b = [1, 2, 1] / C
 a = [ 1 ,  (2 - cDen(1)* 2 * cT^2) / C,  (cDen(1) * cT^2 - cDen(2) * cT + 1)/ C]
 
 figure()
-freqz(b,a)
+soziFreqz(b,a);
 title('Filter obtained with bilinear transform');

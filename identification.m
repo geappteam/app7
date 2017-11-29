@@ -55,7 +55,7 @@ m
 N = m+1
 E
 figure()
-customFreqz(h,1)
+soziFreqz(h,1);
 title('Reponse en frequence de la salle');
 figure()
 impz(h,1)
